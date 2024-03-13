@@ -11,13 +11,13 @@ public class Main {
         int playerNum;
         do {
             System.out.print("인원 수를 입력하십시오: ");
-            playerNum = scanInt();
-        } while (playerNum <= 0);
+            playerNum = scanPlayerNum();
+        } while (playerNum < 1);
 
         BowlingGame game = new BowlingGame(playerNum);
         game.display();
 
-        while (!game.isEnd()) {
+        while (game.isPlaying()) {
             play(game);
             game.display();
         }
@@ -29,19 +29,35 @@ public class Main {
         int pin;
         do {
             System.out.print("쓰러진 핀 개수: ");
-            pin = scanInt();
-        } while (!scoreTable.addPin(pin));
+            pin = scanPin();
+        } while (pin == -1 || scoreTable.isNotValidPin(pin));
+
+        scoreTable.addPin(pin);
     }
 
-    private static int scanInt() {
+    private static int scanPlayerNum() {
         int i;
 
         try {
-            i = sc.nextInt();
-        } catch (InputMismatchException e) {
-            System.out.println("올바른 값을 입력해 주십시오.");
+            i = Integer.parseInt(sc.nextLine().trim());
+            if (i < 1 || i > 10) throw new InputMismatchException();
+        } catch (InputMismatchException | NumberFormatException e) {
+            System.out.println("1 이상 10 이하의 숫자로 입력해 주십시오.");
             i = -1;
-            sc.next();
+        }
+
+        return i;
+    }
+
+    private static int scanPin() {
+        int i;
+
+        try {
+            i = Integer.parseInt(sc.nextLine().trim());
+            if (i < 0 || i > 10) throw new InputMismatchException();
+        } catch (InputMismatchException | NumberFormatException e) {
+            System.out.println("0 이상 10 이하의 숫자로 입력해 주십시오.");
+            i = -1;
         }
 
         return i;

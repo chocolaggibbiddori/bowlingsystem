@@ -6,7 +6,7 @@ import java.util.List;
 public class BowlingGame {
 
     private final List<List<Integer>> pinList;
-    private final StringBuilder scoreBoard;
+    private final ScoreBoard scoreBoard;
     private final int playerNum;
     private int player = 1;
     private int round = 1;
@@ -15,56 +15,8 @@ public class BowlingGame {
 
     public BowlingGame(int playerNum) {
         this.playerNum = playerNum;
-        this.scoreBoard = initScoreBoard();
-        this.pinList = initPinList();
-    }
-
-    public boolean addPin(int pin) {
-        if (!validatePin(pin)) return false;
-
-        List<Integer> pinList = this.pinList.get(player);
-        pinList.add(pin);
-        remainPins -= pin;
-        addPinInBoard(pinList, pin);
-        addScoreInBoard(pinList);
-        checkTurn(pinList);
-
-        if (remainPins == 0) pinInit();
-        return true;
-    }
-
-    public void display() {
-        checkPlayer();
-        System.out.println(scoreBoard);
-    }
-
-    public boolean isEnd() {
-        return round > 10;
-    }
-
-    private StringBuilder initScoreBoard() {
-        int capacity = 53 * 3 * playerNum;
-        StringBuilder scoreBoard = new StringBuilder(capacity);
-        String header = "   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10| TOTAL |\n";
-        String line = "----------------------------------------------------\n";
-
-        scoreBoard
-                .append(header)
-                .append(line);
-        for (int player = 1; player <= playerNum; player++) {
-            char playerChar = playerToChar(player);
-            scoreBoard
-                    .append("   |   |   |   |   |   |   |   |   |   |   |       |\n ")
-                    .append(playerChar)
-                    .append(" |   |   |   |   |   |   |   |   |   |   |       |\n")
-                    .append(line);
-        }
-
-        return scoreBoard;
-    }
-
-    private char playerToChar(int player) {
-        return (char) (player + 64);
+        scoreBoard = new ScoreBoard();
+        pinList = initPinList();
     }
 
     private List<List<Integer>> initPinList() {
@@ -74,63 +26,15 @@ public class BowlingGame {
         return pinList;
     }
 
-    private boolean validatePin(int pin) {
-        boolean valid = pin >= 0 && pin <= 10 && remainPins - pin >= 0;
-        if (!valid) System.out.println("올바른 핀 개수를 입력해 주십시오.");
-        return valid;
-    }
+    public void addPin(int pin) {
+        List<Integer> pinList = this.pinList.get(player);
+        pinList.add(pin);
+        remainPins -= pin;
+        scoreBoard.addPinInBoard(pinList, pin);
+        scoreBoard.addScoreInBoard(pinList);
+        checkTurn(pinList);
 
-    private void addPinInBoard(List<Integer> pinList, int pin) {
-        int idx = getBoardIdx(player, round);
-        String pinStr = pinToString(pin);
-
-        switch (order) {
-            case FIRST -> {
-                if (round < 10) {
-                    if (pin == 10) scoreBoard.replace(idx, idx + 3, " X ");
-                    else scoreBoard.replace(idx, idx + 1, pinStr);
-                } else {
-                    if (pin == 10) scoreBoard.replace(idx, idx + 1, "X");
-                    else scoreBoard.replace(idx, idx + 1, pinStr);
-                }
-            }
-            case SECOND -> {
-                int prePin = pinList.get(pinList.size() - 2);
-
-                if (round < 10) {
-                    if (remainPins == 0) scoreBoard.replace(idx + 2, idx + 3, "/");
-                    else scoreBoard.replace(idx + 2, idx + 3, pinStr);
-                } else {
-                    if (prePin == 10) {
-                        if (pin == 10) scoreBoard.replace(idx + 1, idx + 2, "X");
-                        else scoreBoard.replace(idx + 1, idx + 2, pinStr);
-                    } else {
-                        if (remainPins == 0) scoreBoard.replace(idx + 1, idx + 2, "/");
-                        else scoreBoard.replace(idx + 2, idx + 3, pinStr);
-                    }
-                }
-            }
-            case THIRD -> {
-                int prePin = pinList.get(pinList.size() - 2);
-
-                if (prePin == 10) {
-                    if (pin == 10) scoreBoard.replace(idx + 2, idx + 3, "X");
-                    else scoreBoard.replace(idx + 2, idx + 3, pinStr);
-                } else {
-                    if (remainPins == 0) scoreBoard.replace(idx + 2, idx + 3, "/");
-                    else scoreBoard.replace(idx + 2, idx + 3, pinStr);
-                }
-            }
-        }
-    }
-
-    private String pinToString(int pin) {
-        if (pin == 0) return "-";
-        else return pin + "";
-    }
-
-    private void addScoreInBoard(List<Integer> pinList) {
-        // TODO [2024-03-12]: 점수 표기 기능
+        if (remainPins == 0) pinInit();
     }
 
     private void checkTurn(List<Integer> pinList) {
@@ -157,10 +61,10 @@ public class BowlingGame {
     }
 
     private void nextPlayer() {
-        player++;
+        ++player;
         if (player > playerNum) {
             player = 1;
-            round++;
+            ++round;
         }
     }
 
@@ -172,36 +76,223 @@ public class BowlingGame {
         order = Order.FIRST;
     }
 
-    private void checkPlayer() {
-        int nowPlayer = player;
-        int prePlayer = prePlayer();
-        int nowMarkIdx = getBoardIdx(nowPlayer);
-        int preMarkIdx = getBoardIdx(prePlayer);
-
-        scoreBoard
-                .replace(nowMarkIdx, nowMarkIdx + 3, "==>")
-                .replace(preMarkIdx, preMarkIdx + 3, "   ");
+    public boolean isNotValidPin(int pin) {
+        boolean notValid = pin < 0 || pin > 10 || remainPins - pin < 0;
+        if (notValid) System.out.printf("남아 있는 핀의 개수는 %d개 입니다.\n", remainPins);
+        return notValid;
     }
 
-    private int prePlayer() {
-        int prePlayer = player - 1;
-        return prePlayer < 1 ? playerNum : prePlayer;
+    public void display() {
+        scoreBoard.markPlayer();
+        System.out.println(scoreBoard);
     }
 
-    private int getBoardIdx(int player) {
-        player--;
-        int lineIdxNum = 53;
-        int firstPlayerIdx = lineIdxNum * 2;
-        return firstPlayerIdx + player * lineIdxNum * 3;
-    }
-
-    private int getBoardIdx(int player, int round) {
-        int playerIdx = getBoardIdx(player);
-        return playerIdx + round * 4;
+    public boolean isPlaying() {
+        return round <= 10;
     }
 
     private enum Order {
 
         FIRST, SECOND, THIRD
+    }
+
+    private class ScoreBoard {
+
+        static final int lineIdxNum = 53;
+
+        final StringBuilder scoreBuilder;
+        final int[] pinIdxArr;
+
+        ScoreBoard() {
+            scoreBuilder = initScoreBuilder();
+            pinIdxArr = initPinIdxArr();
+        }
+
+        private StringBuilder initScoreBuilder() {
+            int capacity = lineIdxNum * 3 * playerNum;
+            StringBuilder scoreBuilder = new StringBuilder(capacity);
+            String header = "   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10| TOTAL |\n";
+            String line = "----------------------------------------------------\n";
+
+            scoreBuilder
+                    .append(header)
+                    .append(line);
+            for (int player = 1; player <= playerNum; player++) {
+                char playerChar = playerToChar(player);
+                scoreBuilder
+                        .append("   |   |   |   |   |   |   |   |   |   |   |       |\n ")
+                        .append(playerChar)
+                        .append(" |   |   |   |   |   |   |   |   |   |   |       |\n")
+                        .append(line);
+            }
+
+            return scoreBuilder;
+        }
+
+        private char playerToChar(int player) {
+            return (char) (player + 64);
+        }
+
+        private int[] initPinIdxArr() {
+            return new int[playerNum + 1];
+        }
+
+        @Override
+        public String toString() {
+            return scoreBuilder.toString();
+        }
+
+        void addPinInBoard(List<Integer> pinList, int pin) {
+            int idx = getRoundIdx(player, round);
+            String pinStr = pinToString(pin);
+            int size = pinList.size();
+
+            switch (order) {
+                case FIRST -> {
+                    if (round < 10) {
+                        if (pin == 10) scoreBuilder.replace(idx, idx + 3, " X ");
+                        else scoreBuilder.replace(idx, idx + 1, pinStr);
+                    } else {
+                        if (pin == 10) scoreBuilder.replace(idx, idx + 1, "X");
+                        else scoreBuilder.replace(idx, idx + 1, pinStr);
+                    }
+                }
+                case SECOND -> {
+                    int prePin = pinList.get(size - 2);
+
+                    if (round < 10) {
+                        if (remainPins == 0) scoreBuilder.replace(idx + 2, idx + 3, "/");
+                        else scoreBuilder.replace(idx + 2, idx + 3, pinStr);
+                    } else {
+                        if (prePin == 10) {
+                            if (pin == 10) scoreBuilder.replace(idx + 1, idx + 2, "X");
+                            else scoreBuilder.replace(idx + 1, idx + 2, pinStr);
+                        } else {
+                            if (remainPins == 0) scoreBuilder.replace(idx + 1, idx + 2, "/");
+                            else scoreBuilder.replace(idx + 2, idx + 3, pinStr);
+                        }
+                    }
+                }
+                case THIRD -> {
+                    int prePin = pinList.get(size - 2);
+                    int prePrePin = pinList.get(size - 3);
+
+                    if (remainPins == 0) {
+                        if (prePrePin == 10) {
+                            if (prePin == 10) scoreBuilder.replace(idx + 2, idx + 3, "X");
+                            else scoreBuilder.replace(idx + 2, idx + 3, "/");
+                        } else scoreBuilder.replace(idx + 2, idx + 3, "X");
+                    } else scoreBuilder.replace(idx + 2, idx + 3, pinStr);
+                }
+            }
+        }
+
+        void addScoreInBoard(List<Integer> pinList) {
+            int pinIdx = pinIdxArr[player];
+            addScoreInBoard(pinList, pinIdx);
+        }
+
+        private void addScoreInBoard(List<Integer> pinList, int pinIdx) {
+            int size = pinList.size();
+            if (pinIdx >= size) return;
+
+            int scoreIdx = getScoreIdx();
+            if (isOverFinalScoreIdx(scoreIdx)) return;
+
+            int pin = pinList.get(pinIdx);
+            int preScoreIdxStart = scoreIdx - 4;
+            int preScoreIdxEnd = scoreIdx - 1;
+            int sum = getScore(preScoreIdxStart, preScoreIdxEnd);
+            int nextPinIdx = pinIdx + 1;
+            int nextNextPinIdx = pinIdx + 2;
+            boolean doNotHaveNextPin = nextPinIdx >= size;
+            boolean doNotHaveNextNextPin = nextNextPinIdx >= size;
+
+            if (pin == 10) {
+                if (doNotHaveNextPin || doNotHaveNextNextPin) return;
+                int nextPin = pinList.get(nextPinIdx);
+                int nextNextPin = pinList.get(nextNextPinIdx);
+
+                sum += (pin + nextPin + nextNextPin);
+                pinIdxArr[player] = nextPinIdx;
+            } else {
+                if (doNotHaveNextPin) return;
+                int nextPin = pinList.get(nextPinIdx);
+
+                if (pin + nextPin == 10) {
+                    if (doNotHaveNextNextPin) return;
+                    int nextNextPin = pinList.get(nextNextPinIdx);
+
+                    sum += (10 + nextNextPin);
+                } else {
+                    sum += (pin + nextPin);
+                }
+                pinIdxArr[player] = nextNextPinIdx;
+            }
+
+            String sumStr = String.format("%3d", sum);
+            int totalIdx = getRoundIdx(player, 10) + 6 + lineIdxNum;
+
+            scoreBuilder.replace(scoreIdx, scoreIdx + 3, sumStr);
+            scoreBuilder.replace(totalIdx, totalIdx + 3, sumStr);
+            addScoreInBoard(pinList);
+        }
+
+        private String pinToString(int pin) {
+            if (pin == 0) return "-";
+            else return pin + "";
+        }
+
+        private int getScore(int start, int end) {
+            try {
+                String s = scoreBuilder.substring(start, end).trim();
+                return Integer.parseInt(s);
+            } catch (NumberFormatException e) {
+                return 0;
+            }
+        }
+
+        void markPlayer() {
+            int nowPlayer = player;
+            int prePlayer = getPrePlayer();
+            int nowMarkIdx = getPlayerIdx(nowPlayer);
+            int preMarkIdx = getPlayerIdx(prePlayer);
+
+            if (isPlaying()) scoreBuilder.replace(nowMarkIdx, nowMarkIdx + 3, "==>");
+            scoreBuilder.replace(preMarkIdx, preMarkIdx + 3, "   ");
+        }
+
+        private int getPrePlayer() {
+            int prePlayer = player - 1;
+            return prePlayer < 1 ? playerNum : prePlayer;
+        }
+
+        private int getPlayerIdx(int player) {
+            --player;
+            int playerRow = 2 + player * 3;
+            return playerRow * lineIdxNum;
+        }
+
+        private int getRoundIdx(int player, int round) {
+            int playerIdx = getPlayerIdx(player);
+            return playerIdx + round * 4;
+        }
+
+        private int getScoreIdx() {
+            int roundIdx = getRoundIdx(player, 1);
+            int scoreIdx = roundIdx + lineIdxNum;
+
+            while (!scoreBuilder.substring(scoreIdx, scoreIdx + 3).isBlank()) {
+                if (isOverFinalScoreIdx(scoreIdx)) break;
+                scoreIdx += 4;
+            }
+
+            return scoreIdx;
+        }
+
+        private boolean isOverFinalScoreIdx(int scoreIdx) {
+            int baseScoreIdx = 40;
+            return scoreIdx > baseScoreIdx + player * lineIdxNum * 3;
+        }
     }
 }
