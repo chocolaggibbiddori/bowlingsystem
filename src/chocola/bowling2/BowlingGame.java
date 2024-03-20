@@ -98,7 +98,7 @@ public class BowlingGame {
 
     private class ScoreBoard {
 
-        static final int lineIdxNum = 53;
+        static final int LINE_IDX_NUM = 53;
 
         final StringBuilder scoreBuilder;
         final int[] pinIdxArr;
@@ -109,7 +109,7 @@ public class BowlingGame {
         }
 
         private StringBuilder initScoreBuilder() {
-            int capacity = lineIdxNum * 3 * playerNum;
+            int capacity = LINE_IDX_NUM * 3 * playerNum;
             StringBuilder scoreBuilder = new StringBuilder(capacity);
             String header = "   | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10| TOTAL |\n";
             String line = "----------------------------------------------------\n";
@@ -231,7 +231,7 @@ public class BowlingGame {
             }
 
             String sumStr = String.format("%3d", sum);
-            int totalIdx = getRoundIdx(player, 10) + 6 + lineIdxNum;
+            int totalIdx = getRoundIdx(player, 10) + 6 + LINE_IDX_NUM;
 
             scoreBuilder.replace(scoreIdx, scoreIdx + 3, sumStr);
             scoreBuilder.replace(totalIdx, totalIdx + 3, sumStr);
@@ -270,7 +270,7 @@ public class BowlingGame {
         private int getPlayerIdx(int player) {
             --player;
             int playerRow = 2 + player * 3;
-            return playerRow * lineIdxNum;
+            return playerRow * LINE_IDX_NUM;
         }
 
         private int getRoundIdx(int player, int round) {
@@ -280,7 +280,7 @@ public class BowlingGame {
 
         private int getScoreIdx() {
             int roundIdx = getRoundIdx(player, 1);
-            int scoreIdx = roundIdx + lineIdxNum;
+            int scoreIdx = roundIdx + LINE_IDX_NUM;
 
             while (!scoreBuilder.substring(scoreIdx, scoreIdx + 3).isBlank()) {
                 if (isOverFinalScoreIdx(scoreIdx)) break;
@@ -292,7 +292,7 @@ public class BowlingGame {
 
         private boolean isOverFinalScoreIdx(int scoreIdx) {
             int baseScoreIdx = 40;
-            return scoreIdx > baseScoreIdx + player * lineIdxNum * 3;
+            return scoreIdx > baseScoreIdx + player * LINE_IDX_NUM * 3;
         }
     }
 }
